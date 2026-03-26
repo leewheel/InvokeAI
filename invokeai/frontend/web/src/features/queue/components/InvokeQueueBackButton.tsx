@@ -4,16 +4,17 @@ import { selectDynamicPromptsIsLoading } from 'features/dynamicPrompts/store/dyn
 import { QueueIterationsNumberInput } from 'features/queue/components/QueueIterationsNumberInput';
 import { useInvoke } from 'features/queue/hooks/useInvoke';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PiLightningFill, PiSparkleFill } from 'react-icons/pi';
 
 import { InvokeButtonTooltip } from './InvokeButtonTooltip/InvokeButtonTooltip';
 
-const invoke = 'Invoke';
-
 export const InvokeButton = memo(() => {
+  const { t } = useTranslation();
   const queue = useInvoke();
   const shift = useShiftModifier();
   const isLoadingDynamicPrompts = useAppSelector(selectDynamicPromptsIsLoading);
+  const invokeLabel = t('parameters.invoke.invoke');
 
   return (
     <Flex pos="relative" w="200px">
@@ -22,7 +23,7 @@ export const InvokeButton = memo(() => {
         <Button
           onClick={shift ? queue.enqueueFront : queue.enqueueBack}
           isLoading={queue.isLoading || isLoadingDynamicPrompts}
-          loadingText={invoke}
+          loadingText={invokeLabel}
           isDisabled={queue.isDisabled}
           rightIcon={shift ? <PiLightningFill /> : <PiSparkleFill />}
           variant="solid"
@@ -33,7 +34,7 @@ export const InvokeButton = memo(() => {
           justifyContent="space-between"
           spinnerPlacement="end"
         >
-          <span>{invoke}</span>
+          <span>{invokeLabel}</span>
           <Spacer />
         </Button>
       </InvokeButtonTooltip>
