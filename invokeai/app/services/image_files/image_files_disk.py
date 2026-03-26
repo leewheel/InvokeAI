@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Kyle Schouviller (https://github.com/kyle0654) and the InvokeAI Team
+from datetime import datetime
 from pathlib import Path
 from queue import Queue
 from typing import Optional, Union
@@ -111,7 +112,15 @@ class DiskImageFileStorage(ImageFileStorageBase):
             raise ImageFileDeleteException from e
 
     def get_path(self, image_name: str, thumbnail: bool = False) -> Path:
-        base_folder = self.__thumbnails_folder if thumbnail else self.__output_folder
+        # Get current date for subfolder
+        now = datetime.now()
+        date_folder = now.strftime("%Y-%m-%d")
+
+        if thumbnail:
+            base_folder = self.__thumbnails_folder / date_folder
+        else:
+            base_folder = self.__output_folder / date_folder
+
         filename = get_thumbnail_name(image_name) if thumbnail else image_name
 
         # Strip any path information from the filename
@@ -152,9 +161,20 @@ class DiskImageFileStorage(ImageFileStorageBase):
 
     def __validate_storage_folders(self) -> None:
         """Checks if the required output folders exist and create them if they don't"""
-        folders: list[Path] = [self.__output_folder, self.__thumbnails_folder]
-        for folder in folders:
-            folder.mkdir(parents=True, exist_ok=True)
+        # Create main folders
+        self.__output_folder.mkdir(parents=True, exist_ok=True)
+        self.__thumbnails_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create today's date folder
+        now = datetime.now()
+        date_folder = now.strftime("%Y-%m-%d")
+
+        # Create date-based subfolders
+        date_output_folder = self.__output_folder / date_folder
+        date_thumbnail_folder = self.__thumbnails_folder / date_folder
+
+        date_output_folder.mkdir(parents=True, exist_ok=True)
+        date_thumbnail_folder.mkdir(parents=True, exist_ok=True)
 
     def __get_cache(self, image_name: Path) -> Optional[PILImageType]:
         return None if image_name not in self.__cache else self.__cache[image_name]

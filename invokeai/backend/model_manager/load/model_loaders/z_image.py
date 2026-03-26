@@ -149,12 +149,27 @@ class ZImageDiffusersModel(GenericDiffusersLoader):
         # Z-Image prefers bfloat16, but use safe dtype based on target device capabilities.
         target_device = TorchDevice.choose_torch_device()
         dtype = TorchDevice.choose_bfloat16_safe_dtype(target_device)
+
+        # Check if we should use CPU offload based on available VRAM (16GB threshold)
+        use_cpu_offload = TorchDevice.should_use_cpu_offload(vram_threshold_gb=16.0)
+
         try:
-            result: AnyModel = load_class.from_pretrained(
-                model_path,
-                torch_dtype=dtype,
-                variant=variant,
-            )
+            if use_cpu_offload and target_device.type == "cuda":
+                # Low VRAM mode: Use CPU offload via device_map="sequential"
+                # This loads model layers sequentially to CPU/VRAM instead of loading all at once
+                result: AnyModel = load_class.from_pretrained(
+                    model_path,
+                    torch_dtype=dtype,
+                    variant=variant,
+                    device_map="sequential",
+                    low_cpu_mem_usage=True,
+                )
+            else:
+                result: AnyModel = load_class.from_pretrained(
+                    model_path,
+                    torch_dtype=dtype,
+                    variant=variant,
+                )
         except OSError as e:
             if variant and "no file named" in str(
                 e

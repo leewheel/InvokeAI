@@ -137,3 +137,37 @@ class TorchDevice:
             if device.type == "cuda":
                 return torch.float16
             return torch.float32
+
+    @classmethod
+    def get_vram_total_gb(cls, device: Optional[torch.device] = None) -> float:
+        """Return the total VRAM in GB for the given CUDA device.
+
+        Args:
+            device: The target device. If None, uses choose_torch_device().
+
+        Returns:
+            Total VRAM in GB, or 0.0 if not applicable (CPU/MPS or no GPU).
+        """
+        device = device or cls.choose_torch_device()
+        if device.type == "cuda" and torch.cuda.is_available():
+            try:
+                total_memory = torch.cuda.get_device_properties(device).total_memory
+                return total_memory / (1024**3)  # Convert bytes to GB
+            except Exception:
+                return 0.0
+        return 0.0
+
+    @classmethod
+    def should_use_cpu_offload(cls, vram_threshold_gb: float = 16.0) -> bool:
+        """Determine if CPU offload should be used based on available VRAM.
+
+        Args:
+            vram_threshold_gb: VRAM threshold in GB. Default is 16GB.
+
+        Returns:
+            True if VRAM is less than or equal to the threshold, False otherwise.
+        """
+        if not torch.cuda.is_available():
+            return False
+        vram_gb = cls.get_vram_total_gb()
+        return vram_gb <= vram_threshold_gb

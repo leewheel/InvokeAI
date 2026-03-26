@@ -1,12 +1,15 @@
 from invokeai.app.services.names.names_base import NameServiceBase
-from invokeai.app.util.misc import uuid_string
+from datetime import datetime
+import uuid
 
 
 class SimpleNameService(NameServiceBase):
-    """Creates image names from UUIDs."""
+    """Creates image names with date-based naming."""
 
-    # TODO: Add customizable naming schemes
     def create_image_name(self) -> str:
-        uuid_str = uuid_string()
-        filename = f"{uuid_str}.png"
+        # Format: 2026-03-24-143052-a1b2.png (date-time + short uuid for uniqueness)
+        now = datetime.now()
+        date_time_str = now.strftime("%Y-%m-%d-%H%M%S")
+        short_uuid = uuid.uuid4().hex[:4]  # 4-char suffix for uniqueness
+        filename = f"{date_time_str}-{short_uuid}.png"
         return filename
